@@ -1,0 +1,595 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\database-build.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}12 Dec 2017, 11:25:45
+{txt}
+{com}.         
+. set more off
+{txt}
+{com}. clear
+{txt}
+{com}. 
+. local workingdir "E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity"
+{txt}
+{com}. local datafile "`workingdir'\database.dta"
+{txt}
+{com}. 
+. gen inc_year=.
+{txt}
+{com}. 
+. foreach year in 2011 2012 2013 2014 {c -(}
+{txt}  2{com}.         append using "`workingdir'\comorbid-`year'.dta"
+{txt}  3{com}.         drop comordes
+{txt}  4{com}.         replace inc_year=`year' if inc_year == .
+{txt}  5{com}. {c )-}
+{txt}(1,120,040 real changes made)
+(1,271,111 real changes made)
+(1,340,853 real changes made)
+(1,440,638 real changes made)
+
+{com}. 
+. gen subsort=.
+{txt}(5,172,642 missing values generated)
+
+{com}. bysort inc_key : replace subsort=_n
+{txt}(5172642 real changes made)
+
+{com}. 
+. reshape wide comorkey, i(inc_key inc_year) j(subsort)
+{txt}(note: j = 1 2 3 4 5 6 7 8 9 10 11 12 13 14)
+
+Data{col 36}long{col 43}->{col 48}wide
+{hline 77}
+Number of obs.                 {res} 5.2e+06   {txt}->{res} 3.3e+06
+{txt}Number of variables            {res}       4   {txt}->{res}      16
+{txt}j variable (14 values)          {res}subsort   {txt}->   (dropped)
+xij variables:
+                               {res}comorkey   {txt}->   {res}comorkey1 comorkey2 ... comorkey14
+{txt}{hline 77}
+
+{com}. keep inc_key inc_year comorkey1
+{txt}
+{com}. // we now have incident, the year it occurred, and a single comorbidity variable
+. // comorkey1 is -1 if facility noted that pt had no comorbidities
+. // comorkey1 is -2 if facility did not report on pt
+. // comorkey1 is >0 if at least 1 comorbidity was listed, but the specific
+. //              value is otherwise meaningless
+. 
+. foreach year in 2011 2012 2013 2014 {c -(}
+{txt}  2{com}.         merge 1:1 inc_key using `workingdir'\demo-`year'.dta, ///
+>                 keepusing(fac_key) update nogenerate
+{txt}  3{com}. {c )-}
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}       2,523,391
+{txt}{col 9}from master{col 30}{res}       2,523,391{txt}  
+{col 9}from using{col 30}{res}               0{txt}  
+
+{col 5}matched{col 30}{res}         773,299
+{txt}{col 9}not updated{col 30}{res}         773,299{txt}  
+{col 9}missing updated{col 30}{res}               0{txt}  
+{col 9}nonmissing conflict{col 30}{res}               0{txt}  
+{col 5}{hline 41}
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}       2,463,379
+{txt}{col 9}from master{col 30}{res}       2,463,379{txt}  
+{col 9}from using{col 30}{res}               0{txt}  
+
+{col 5}matched{col 30}{res}         833,311
+{txt}{col 9}not updated{col 30}{res}               0{txt}  
+{col 9}missing updated{col 30}{res}         833,311{txt}  
+{col 9}nonmissing conflict{col 30}{res}               0{txt}  
+{col 5}{hline 41}
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}       2,467,945
+{txt}{col 9}from master{col 30}{res}       2,467,945{txt}  
+{col 9}from using{col 30}{res}               0{txt}  
+
+{col 5}matched{col 30}{res}         828,745
+{txt}{col 9}not updated{col 30}{res}               0{txt}  
+{col 9}missing updated{col 30}{res}         828,745{txt}  
+{col 9}nonmissing conflict{col 30}{res}               0{txt}  
+{col 5}{hline 41}
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}       2,435,355
+{txt}{col 9}from master{col 30}{res}       2,435,355{txt}  
+{col 9}from using{col 30}{res}               0{txt}  
+
+{col 5}matched{col 30}{res}         861,335
+{txt}{col 9}not updated{col 30}{res}               0{txt}  
+{col 9}missing updated{col 30}{res}         861,335{txt}  
+{col 9}nonmissing conflict{col 30}{res}               0{txt}  
+{col 5}{hline 41}
+
+{com}. 
+. // calculate numbers with bysort facility inc_year:, drop all observations except
+. // one with bysort facility:, then drop inc_key comorkey1
+. // maybe do all with bysort facility inc_year?
+. bysort fac_key inc_year : egen year_incidents = total(fac_key != .)
+{txt}
+{com}. bysort fac_key inc_year : egen year_missing = total(comorkey1 == -2)
+{txt}
+{com}. bysort fac_key inc_year : egen year_nocomor = total(comorkey1 == -1)
+{txt}
+{com}. bysort fac_key inc_year : egen year_comors = total(comorkey1 > 0)
+{txt}
+{com}. bysort fac_key inc_year : drop if _n < _N
+{txt}(3,293,668 observations deleted)
+
+{com}. drop inc_key comorkey1
+{txt}
+{com}. 
+. local facvars_s "hosptype teachsta acslevel statelev bedsize comorcd region"
+{txt}
+{com}. local facvars_g "trcerreg tramreg traumsur"
+{txt}
+{com}. local facvars "`facvars_s' `facvars_g'"
+{txt}
+{com}. foreach var in `facvars_s' {c -(}
+{txt}  2{com}.         gen `var'=""
+{txt}  3{com}. {c )-} 
+{txt}(3,022 missing values generated)
+(3,022 missing values generated)
+(3,022 missing values generated)
+(3,022 missing values generated)
+(3,022 missing values generated)
+(3,022 missing values generated)
+(3,022 missing values generated)
+
+{com}. foreach var in `facvars_g' {c -(}
+{txt}  2{com}.         gen `var'_cat=""
+{txt}  3{com}. {c )-}
+{txt}(3,022 missing values generated)
+(3,022 missing values generated)
+(3,022 missing values generated)
+
+{com}. foreach year in 2014 2013 {c -(}
+{txt}  2{com}.         merge m:1 fac_key using "`workingdir'\facility-`year'.dta", ///
+>                 update nogenerate
+{txt}  3{com}.         replace inc_year=`year' if inc_year==.
+{txt}  4{com}.         foreach var of varlist `facvars' {c -(}
+{txt}  5{com}.                 replace `var'="" if inc_year < `year'
+{txt}  6{com}.         {c )-}
+{txt}  7{com}. {c )-}
+{res}{txt}{p 0 7 2}
+(note: variable
+teachsta was 
+str1, now str12 to accommodate using data's values)
+{p_end}
+{p 0 7 2}
+(note: variable
+acslevel was 
+str1, now str14 to accommodate using data's values)
+{p_end}
+{p 0 7 2}
+(note: variable
+statelev was 
+str1, now str14 to accommodate using data's values)
+{p_end}
+{p 0 7 2}
+(note: variable
+bedsize was 
+str1, now str9 to accommodate using data's values)
+{p_end}
+{p 0 7 2}
+(note: variable
+region was 
+str1, now str9 to accommodate using data's values)
+{p_end}
+
+{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}             507
+{txt}{col 9}from master{col 30}{res}             506{txt}  
+{col 9}from using{col 30}{res}               1{txt}  
+
+{col 5}matched{col 30}{res}           2,516
+{txt}{col 9}not updated{col 30}{res}               0{txt}  
+{col 9}missing updated{col 30}{res}           2,516{txt}  
+{col 9}nonmissing conflict{col 30}{res}               0{txt}  
+{col 5}{hline 41}
+(1 real change made)
+(0 real changes made)
+(1,792 real changes made)
+(1,792 real changes made)
+(1,792 real changes made)
+(1,792 real changes made)
+(0 real changes made)
+(1,792 real changes made)
+(1,792 real changes made)
+(1,792 real changes made)
+(1,792 real changes made)
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}             278
+{txt}{col 9}from master{col 30}{res}             275{txt}  
+{col 9}from using{col 30}{res}               3{txt}  
+
+{col 5}matched{col 30}{res}           2,748
+{txt}{col 9}not updated{col 30}{res}             373{txt}  
+{col 9}missing updated{col 30}{res}           1,672{txt}  
+{col 9}nonmissing conflict{col 30}{res}             703{txt}  
+{col 5}{hline 41}
+(3 real changes made)
+(0 real changes made)
+(1,371 real changes made)
+(1,307 real changes made)
+(1,371 real changes made)
+(1,371 real changes made)
+(0 real changes made)
+(1,371 real changes made)
+(1,371 real changes made)
+(1,371 real changes made)
+(1,371 real changes made)
+
+{com}. foreach var of varlist `facvars_g' {c -(}
+{txt}  2{com}.         replace `var'_cat=`var'
+{txt}  3{com}.         drop `var'
+{txt}  4{com}.         gen `var'=.
+{txt}  5{com}. {c )-}
+{txt}variable {bf}trcerreg_cat{sf} was {bf}{res}str1{sf}{txt} now {bf}{res}str2{sf}
+{txt}(1,477 real changes made)
+(3,026 missing values generated)
+variable {bf}tramreg_cat{sf} was {bf}{res}str1{sf}{txt} now {bf}{res}str20{sf}
+{txt}(1,477 real changes made)
+(3,026 missing values generated)
+variable {bf}traumsur_cat{sf} was {bf}{res}str1{sf}{txt} now {bf}{res}str3{sf}
+{txt}(1,477 real changes made)
+(3,026 missing values generated)
+
+{com}. foreach year in 2012 2011 {c -(}
+{txt}  2{com}.         merge m:1 fac_key using "`workingdir'\facility-`year'.dta", ///
+>                 update nogenerate force
+{txt}  3{com}.         foreach var of varlist `facvars_s' {c -(}
+{txt}  4{com}.                 replace `var'="" if inc_year < `year'
+{txt}  5{com}.         {c )-}
+{txt}  6{com}.         foreach var of varlist `facvars_g' {c -(}
+{txt}  7{com}.                 replace `var'=. if inc_year < `year'
+{txt}  8{com}.         {c )-}
+{txt}  9{com}. {c )-}
+{res}{txt}{p 0 7 2}
+(note: variable
+adultbed was int in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+burnbed was byte in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+icubrbed was byte in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+icutrbed was int in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+pedbed was int in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+neurosur was byte in the using data, but will be
+str3 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+orthosur was byte in the using data, but will be
+str5 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+hosptype was 
+str1, now str10 to accommodate using data's values)
+{p_end}
+{p 0 7 2}
+(note: variable
+comorcd was 
+str1, now str39 to accommodate using data's values)
+{p_end}
+
+{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}             209
+{txt}{col 9}from master{col 30}{res}             209{txt}  
+{col 9}from using{col 30}{res}               0{txt}  
+
+{col 5}matched{col 30}{res}           2,817
+{txt}{col 9}not updated{col 30}{res}               0{txt}  
+{col 9}missing updated{col 30}{res}           1,838{txt}  
+{col 9}nonmissing conflict{col 30}{res}             979{txt}  
+{col 5}{hline 41}
+(711 real changes made)
+(711 real changes made)
+(689 real changes made)
+(711 real changes made)
+(711 real changes made)
+(711 real changes made)
+(711 real changes made)
+(711 real changes made, 711 to missing)
+(711 real changes made, 711 to missing)
+(711 real changes made, 711 to missing)
+{res}{txt}{p 0 7 2}
+(note: variable
+adultbed was int in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+burnbed was byte in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+icubrbed was byte in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+icutrbed was int in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+pedbed was int in the using data, but will be
+str20 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+neurosur was byte in the using data, but will be
+str3 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+orthosur was byte in the using data, but will be
+str5 now)
+{p_end}
+{p 0 7 2}
+(note: variable
+icd9incl was 
+str120, now str123 to accommodate using data's values)
+{p_end}
+
+{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}             371
+{txt}{col 9}from master{col 30}{res}             371{txt}  
+{col 9}from using{col 30}{res}               0{txt}  
+
+{col 5}matched{col 30}{res}           2,655
+{txt}{col 9}not updated{col 30}{res}             744{txt}  
+{col 9}missing updated{col 30}{res}             462{txt}  
+{col 9}nonmissing conflict{col 30}{res}           1,449{txt}  
+{col 5}{hline 41}
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+
+{com}. 
+. keep fac_key `facvars' year_* inc_year *_cat
+{txt}
+{com}. 
+. gen acsverified="Yes" if acslevel != "" & acslevel != "Not Applicable" 
+{txt}(1,636 missing values generated)
+
+{com}. replace acsverified="No" if acslevel == "Not Applicable"
+{txt}(1,444 real changes made)
+
+{com}. 
+. gen stateverified="Yes" if statelev != "Not Applicable" & statelev != ""
+{txt}(591 missing values generated)
+
+{com}. replace stateverified="No" if statelev == "Not Applicable"
+{txt}(591 real changes made)
+
+{com}. 
+. gen trauma_center="Yes" if stateverified=="Yes" | acsverified=="Yes"
+{txt}(330 missing values generated)
+
+{com}. replace trauma_center="No" if stateverified=="No" & acsverified=="No"
+{txt}(274 real changes made)
+
+{com}. 
+. gen traumalev=">III" if trauma_center=="Yes"
+{txt}(330 missing values generated)
+
+{com}. replace traumalev="III" if statelev=="III" | acslevel=="III"
+{txt}(608 real changes made)
+
+{com}. replace traumalev="II" if statelev=="II" | acslevel=="II"
+{txt}(1,020 real changes made)
+
+{com}. replace traumalev="I" if statelev=="I" | acslevel=="I"
+{txt}(839 real changes made)
+
+{com}. replace traumalev="Not Applicable" if trauma_center=="No"
+{txt}variable {bf}traumalev{sf} was {bf}{res}str4{sf}{txt} now {bf}{res}str14{sf}
+{txt}(274 real changes made)
+
+{com}. 
+. replace region="" if region=="NA"
+{txt}(15 real changes made)
+
+{com}. 
+. // translate those facvars_g into appropriate 2013/2014 categories
+. // note that some information is lost (such as 0.5 FTE trauma registrars)
+. replace tramreg_cat="0" if tramreg_cat=="" & tramreg==0
+{txt}(44 real changes made)
+
+{com}. replace tramreg_cat="1" if tramreg_cat=="" & tramreg==1
+{txt}(739 real changes made)
+
+{com}. replace tramreg_cat=">1" if tramreg_cat=="" & tramreg > 1 & tramreg < .
+{txt}(677 real changes made)
+
+{com}. replace tramreg_cat="" if tramreg_cat=="Not Known/Not Record"
+{txt}(43 real changes made)
+
+{com}. 
+. replace trcerreg_cat="0" if trcerreg_cat=="" & trcerreg==0
+{txt}(1,154 real changes made)
+
+{com}. replace trcerreg_cat="1" if trcerreg_cat=="" & trcerreg==1
+{txt}(307 real changes made)
+
+{com}. replace trcerreg_cat=">1" if trcerreg_cat=="" & trcerreg > 1 & trcerreg < .
+{txt}(88 real changes made)
+
+{com}. 
+. replace traumsur_cat="0" if traumsur_cat=="" & traumsur==0
+{txt}(145 real changes made)
+
+{com}. replace traumsur_cat="1-3" if traumsur_cat=="" & traumsur >= 1 & ///
+>         traumsur <= 3
+{txt}(229 real changes made)
+
+{com}. replace traumsur_cat="4-5" if traumsur_cat=="" & traumsur >= 4 & ///
+>         traumsur <= 5
+{txt}(510 real changes made)
+
+{com}. replace traumsur_cat="5-6" if traumsur_cat=="" & traumsur > 5 & ///
+>         traumsur <= 6
+{txt}(211 real changes made)
+
+{com}. replace traumsur_cat="7-8" if traumsur_cat=="" & traumsur >= 7 & ///
+>         traumsur <= 8
+{txt}(241 real changes made)
+
+{com}. replace traumsur_cat=">8" if traumsur_cat=="" & traumsur > 8 & traumsur < .
+{txt}(213 real changes made)
+
+{com}. 
+. gen year_pctmissing = year_missing / year_incidents
+{txt}(4 missing values generated)
+
+{com}. 
+. /// there are just a few facilities with no incidents; they thus have
+> /// missing data and are excluded automatically
+> 
+. bysort fac_key : egen years_contributing = total(comorcd != "Not collected")
+{txt}
+{com}. 
+. foreach string in incidents missing nocomor comors {c -(}
+{txt}  2{com}.         bysort fac_key : egen temp_`string' = total(year_`string') if ///
+>                 comorcd != "Not collected"
+{txt}  3{com}.         bysort fac_key : egen overall_`string' = max(temp_`string')
+{txt}  4{com}.         drop temp_`string'
+{txt}  5{com}. {c )-}
+{txt}(110 missing values generated)
+(101 missing values generated)
+(110 missing values generated)
+(101 missing values generated)
+(110 missing values generated)
+(101 missing values generated)
+(110 missing values generated)
+(101 missing values generated)
+
+{com}. 
+. gen overall_pctmissing = overall_missing / overall_incidents
+{txt}(105 missing values generated)
+
+{com}. 
+. foreach var in hosptype teachsta acslevel statelev bedsize comorcd /// 
+>         region acsverified stateverified trauma_center traumalev ///
+>         traumsur_cat tramreg_cat trcerreg_cat {c -(}
+{txt}  2{com}.                 bysort fac_key : egen overall_`var' = mode(`var'), maxmode
+{txt}  3{com}. {c )-}
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(156 missing values generated)
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(76 missing values generated)
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(156 missing values generated)
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(15 missing values generated)
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(76 missing values generated)
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(17 missing values generated)
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(17 missing values generated)
+{p}{txt}Warning: at least one group contains all
+missing values or contains multiple modes.
+Generating missing values for the mode of these
+groups.  Use the {cmd: missing}, {cmd:maxmode},
+{cmd:minmode}, or {cmd:nummode()}
+options to control this behavior.{p_end}
+(118 missing values generated)
+
+{com}. foreach var in year_incidents traumsur tramreg trcerreg {c -(}
+{txt}  2{com}.         bysort fac_key : egen overall_`var' = mean(`var')
+{txt}  3{com}. {c )-}
+{txt}(4 missing values generated)
+(156 missing values generated)
+(156 missing values generated)
+(156 missing values generated)
+
+{com}. save `datafile', replace
+{txt}file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\database.dta saved
+
+{com}. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\database-build.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}12 Dec 2017, 11:28:11
+{txt}{.-}
+{smcl}
+{txt}{sf}{ul off}

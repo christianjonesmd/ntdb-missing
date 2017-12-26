@@ -1,0 +1,78 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\csv-import.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res} 4 Dec 2017, 21:53:34
+{txt}
+{com}.         
+. set more off
+{txt}
+{com}. clear
+{txt}
+{com}. local NTDBDIR "E:\CSTOR_Research\DataSet\NTDB"
+{txt}
+{com}. local workingdir "E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity"
+{txt}
+{com}. 
+. foreach year in 2011 2012 2013 2014 {c -(}
+{txt}  2{com}.         local csvdir "`NTDBDIR'\\`year'\CSV"
+{txt}  3{com}.         import delimited using "`csvdir'\rds_comorbid.csv", varnames(1) clear
+{txt}  4{com}.         save "`workingdir'\comorbid-`year'.dta", replace
+{txt}  5{com}.         import delimited using "`csvdir'\rds_facility.csv", varnames(1) clear
+{txt}  6{com}.         // Some facilities files (2014) have duplicates
+.         duplicates drop
+{txt}  7{com}.         save "`workingdir'\facility-`year'.dta", replace
+{txt}  8{com}.         import delimited using "`csvdir'\rds_demo.csv", varnames(1) clear
+{txt}  9{com}.         save "`workingdir'\demo-`year'.dta", replace
+{txt} 10{com}. {c )-}
+{res}{text}(3 vars, 1,120,040 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\comorbid-2011.dta saved
+{res}{text}(40 vars, 744 obs)
+
+{p 0 4}{txt}Duplicates in terms of {txt} all variables{p_end}
+
+(0 observations are duplicates)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\facility-2011.dta saved
+{res}{text}(10 vars, 773,299 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\demo-2011.dta saved
+{res}{text}(3 vars, 1,271,111 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\comorbid-2012.dta saved
+{res}{text}(40 vars, 805 obs)
+
+{p 0 4}{txt}Duplicates in terms of {txt} all variables{p_end}
+
+(0 observations are duplicates)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\facility-2012.dta saved
+{res}{text}(9 vars, 833,311 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\demo-2012.dta saved
+{res}{text}(3 vars, 1,340,853 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\comorbid-2013.dta saved
+{res}{text}(21 vars, 777 obs)
+
+{p 0 4}{txt}Duplicates in terms of {txt} all variables{p_end}
+
+(0 observations are duplicates)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\facility-2013.dta saved
+{res}{text}(9 vars, 828,745 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\demo-2013.dta saved
+{res}{text}(3 vars, 1,440,638 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\comorbid-2014.dta saved
+{res}{text}(22 vars, 747 obs)
+
+{p 0 4}{txt}Duplicates in terms of {txt} all variables{p_end}
+
+(17 observations deleted)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\facility-2014.dta saved
+{res}{text}(9 vars, 861,335 obs)
+file E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\demo-2014.dta saved
+
+{com}. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}E:\CSTOR_Research\Projects\Jones\NTDB_Comorbidity\csv-import.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res} 4 Dec 2017, 21:55:47
+{txt}{.-}
+{smcl}
+{txt}{sf}{ul off}
